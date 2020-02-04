@@ -1,0 +1,60 @@
+= BoSy in Docker
+:source-highlighter: highlightjs
+
+image:https://img.shields.io/badge/docker-latest-blue.svg[Docker Image, link=https://hub.docker.com/r/lipen/bosy]
+
+== Install
+
+Either build the Docker image yourself, or pull it from the Docker Hub:
+
+[source,bash]
+----
+## Hard way:
+git clone https://github.com/lipen/docker-bosy && cd docker-bosy
+docker build -t bosy - <Dockerfile  # wait 20 minutes...
+
+## Easy way:
+docker pull lipen/bosy
+----
+
+== Usage
+
+- To run BoSy on sample input:
++
+[source,bash]
+----
+docker run --rm -it lipen/bosy BoSy Samples/simple_arbiter.bosy
+----
+
+- The container has `WORKDIR` set to `/bosy-git` (cloned from https://github.com/reactive-systems/bosy[reactive-systems/bosy]), so all paths in arguments to BoSy are relative to it.
+
+- `BoSy` and `BoSyHyper` binaries, as well as other necessary tools (_e.g._, `ltl2tgba` `syfco`, `cryptominisat5`, `z3`, _etc_) are available in `/usr/local/bin` (already in `PATH`).
+
+== Build
+
+In order to build BoSy from modified sources, do the following:
+
+. Clone https://github.com/reactive-systems/bosy[bosy]:
++
+[source,bash]
+----
+git clone https://github.com/reactive-systems/bosy && cd bosy
+----
+
+. Modify sources as needed.
+
+. Replace all relative paths to tools (`./Tools/<sometool>`) to non-relative (just `<sometool>`:
++
+[source,bash]
+----
+find Sources Tests -type f -name "*.swift" -exec sed -i 's/.\/Tools\///g' {} +
+----
+
+. Use `swift` packager manager to build and run the BoSy (or BoSyHyper):
++
+[source,bash]
+----
+docker run --rm -it -v $PWD:/bosy -w /bosy -u $(id -u):$(id -g) lipen/bosy swift run --configuration release -Xcc -O3 -Xcc -DNDEBUG -Xswiftc -Ounchecked --jobs 8 BoSy Samples/simple_arbiter.bosy
+----
++
+Note that in this case, all paths in the BoSy arguments are relative to the `/bosy` directory mounted to `$PWD` on the host!
